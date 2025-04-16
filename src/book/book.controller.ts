@@ -1,19 +1,18 @@
-import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Put, ValidationPipe } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Put, UseFilters, ValidationPipe } from "@nestjs/common";
 import { BookDto } from "./data/book.dto";
+import { BookException } from "./book.exception";
+import { BookCustomExceptionFilter } from "./book.exception.filter";
 
 @Controller("book")
 export class BookController {
    
 
-    @Get("/:id")
-    findBookById(@Param("id", ParseBoolPipe) id : number): string {
-        console.log(id, typeof(id));
-        return "Book by id";
+    @Get("")
+    @UseFilters(BookCustomExceptionFilter)
+    helloBookApi(): string {
+        throw new BadRequestException()
+
     }
 
-    @Post("add")
-    addBook(@Body(new ValidationPipe()) book: BookDto) : string {
-        return "add book"
-    }
-
+    
 }
