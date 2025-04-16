@@ -1,30 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
-import { BookService } from "./book.service";
-import { Book } from "./data/book.dto";
+import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Put } from "@nestjs/common";
+import { BookDto } from "./data/book.dto";
+import { BookPipe } from "./pipes/book.pipe";
 
 @Controller("book")
 export class BookController {
-    constructor(private bookService : BookService) {
+   
 
+    @Get("/:id")
+    findBookById(@Param("id", ParseBoolPipe) id : number): string {
+        console.log(id, typeof(id));
+        return "Book by id";
     }
 
-    @Get("/findAll")
-    getAllBooks(): Book[] {
-        return this.bookService.findAllBooks();
+    @Post("add")
+    addBook(@Body(new BookPipe()) book : BookDto) : string {
+        return "add book"
     }
 
-    @Put("/update")
-    updateBook(@Body() book : Book): string {
-        return this.bookService.updateBookService(book);
-    }
-
-    @Delete("/delete/:id")
-    deleteBook(@Param() bookId: string) {
-        return this.bookService.deleteBookService(bookId);
-    }
-
-    @Post("/add")
-    addBook(@Body() book: Book) {
-        return this.bookService.addBookService(book);
-    }
 }
