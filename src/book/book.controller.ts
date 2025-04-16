@@ -1,6 +1,5 @@
-import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Put, ValidationPipe } from "@nestjs/common";
 import { BookDto } from "./data/book.dto";
-import { BookPipe } from "./pipes/book.pipe";
 
 @Controller("book")
 export class BookController {
@@ -13,7 +12,7 @@ export class BookController {
     }
 
     @Post("add")
-    addBook(@Body(new BookPipe()) book : BookDto) : string {
+    addBook(@Body(new ValidationPipe()) book: BookDto) : string {
         return "add book"
     }
 
