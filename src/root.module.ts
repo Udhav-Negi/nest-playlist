@@ -13,6 +13,6 @@ import { UsersModule } from './users/users.module';
 export class RootModule {
   constructor()
   {
-    console.log('App Module ')
+    console.log('App Module')
   }
 }
