@@ -318,6 +318,10 @@ a. Create a project in nestjs implementing pipes, guards, middlewares, express r
 b. Handle get and put request and then route param and query string -> 	done 
 implementing pipes 
 
+14. Authentication and authorization using jwt in nestjs
+
+
+
 
  
 
