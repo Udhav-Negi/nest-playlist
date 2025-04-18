@@ -1,0 +1,325 @@
+nestjs
+
+7. Middlewares in nestjs 
+Global middlewares 
+
+a. Global middleware are executed in main.ts file and are always executed using functional based approach. 
+
+Syntax - 
+function globalMiddlewareOne(req : Request, res: Response, next : NextFunction) {
+  console.log("This is the middleware number one")
+  next();
+}
+
+Module based middleware 
+1. Module based middleware are implemented using NestMiddleware interface and use method has to be compulsorily implemented. 
+
+Syntax - 
+@Injectable()
+export class BookMiddleware implements NestMiddleware {
+    use(req: Request, res: Response, next: NextFunction) {
+        console.log("This is class based middleware implemented for book module")
+        next()
+    }
+}
+
+2. After creating middleware it can ne used inside module with the following syntax 
+Syntax - 
+export class BookModule implements NestModule{
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(BookMiddleware).forRoutes("book")
+    }
+}
+
+Remember that a configure method has to be implemented like shown above and forRoutes means for which path 
+
+8. Pipes in nestjs 
+Defination - A pipe is a class annotated with the @Injectable() decorator, which implements the PipeTransform interface. 
+
+Layman - In layman language we can say that pipe is a transformer which transform one thing to another 
+
+Pipe has two typical use cases 
+1. Transformation : transforms input data to the desired form e.g(from string to integer)
+2. Validation : evaluates input data and if valid, simply pass it through unchanged, otherwise, throw an exception when the data is incorrect. 
+
+Built-in pipes -
+Nest comes with eight pipes available out of the box. 
+a. ValidationPipe
+b. ParseIntPipe
+c. ParseFloatPipe
+d. ParseBoolPipe
+e. ParseArrayPipe
+f. ParseUUIDPPipe
+g. ParseEnumPipe
+h. DefaultValuePipe
+
+To use a pipe, we need to bind an instance of pipe class to the appropriate context. 
+@Get(":id")
+async findOne(@Param("id:, ParseIntPipe) id: number) {
+		
+}
+
+
+Custom pipes - 
+import { ArgumentMetadata, BadRequestException, PipeTransform } from "@nestjs/common";
+
+export class BookPipe implements PipeTransform {
+    transform(value: any, metadata: ArgumentMetadata) {
+        if(value.id == 1) return value;
+        else 
+        {
+            throw new BadRequestException("Validation failed")
+        }
+    }
+}
+
+-> transform method has to be implemented 
+
+9. Nestjs validations 
+-> In nestjs we can perform class based validation with the help of two following packages 
+a. class-validator -> It provides decorator based and non decorator based validation, applicable only on class 
+b. class-transformer -> It transforms plain object to class, and class to plain object
+
+Steps to implement class validator 
+1. class transformer convert object to class 
+2. Apply validation on the class obtained 
+
+Syntax 
+export class BookPipe implements PipeTransform {
+    async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
+        
+        // 1. class transformer converts objects to class 
+        const bookClass = plainToInstance(BookDto, value);
+
+        // 2. class validation 
+        const error = await validate(bookClass);
+
+        if(error.length > 0) {
+            throw new BadRequestException("Validation failed " + JSON.stringify(error))
+        }
+
+        console.log(value, typeof(value))
+        return value; 
+    }
+}
+
+Note - In nestjs, pipes are in built implemented. To use it we must make sure that we have implemented decorators in dto
+syntax - 
+
+import { IsInt, IsString } from 'class-validator';
+export class BookDto {
+    @IsInt()
+    id: number;
+
+    @IsString()
+    name: string;
+}
+
+applying validation on controller method 
+syntax - 
+@Post("add")
+    addBook(@Body(new ValidationPipe()) book: BookDto) : string {
+        return "add book"
+    }
+
+
+10. Nestjs exceptions explained 
+
+- Creating custom exceptions in nest
+syntax : 
+export class BookException extends HttpException {
+    constructor() {
+        super("This is my Custom Book exception", HttpStatus.BAD_REQUEST)
+    }
+}
+
+- Exception filters 
+Layman - It is used to exercise full control over the execptions layer, and it appends additional information to existing error classes  
+syntax 
+@Catch(HttpException) // It means that we want to handle only the http exception
+export class BookCustomExceptionFilter implements ExceptionFilter {
+    catch(exception: HttpException, host: ArgumentsHost): any {
+        const context = host.switchToHttp();
+        const response = context.getResponse<Response>();
+        const request = context.getRequest<Request>();
+        const status = exception.getStatus();
+
+        response.status(status).json({
+            statusCode : status,
+            timeStamp : new Date().toISOString(),
+            url : request.url,
+            host : request.get("host")
+        })
+
+    }
+}
+
+- Using exception filters in controllers 
+-> To use custom filter exception we have to use @UseFilters(BookCustomExceptionFilter) decorator, containing the exception filter class name in it, and it will append its response
+syntax - 
+@Get("")
+    @UseFilters(BookCustomExceptionFilter)
+    helloBookApi(): string {
+        throw new BadRequestException()
+
+    }
+
+
+11. Nestjs guards 
+Layman - guard is like a security outside a building.
+Definition - A guard is a class annotated with the @Injectable() decorator, which implements the CanActivate interface. 
+-> Guards have a single responsibility. They determine whether a given request will be handled by the route handler or not, depending on certain conditions present at run time.
+
+Note - In general guards return true or false. True means allow, false means do not allow
+
+Synatx - 
+import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+import { Request } from "express";
+
+@Injectable()
+export class BookGuard implements CanActivate {
+    public key : string = "sdvhjbdsj";
+    public username: string = "notezz"
+    public password : string = "1234"
+
+    canActivate(context: ExecutionContext): boolean {
+        const ctx = context.switchToHttp()
+        const request = ctx.getRequest<Request>(); // request will work same as request object of express
+
+        if(request.header("username") == undefined || request.header("password") == undefined) return false;
+        
+        return request.header("username") == this.username && request.header("password") == this.password;
+    }
+}
+
+Using guards in a controller - 
+-> To use guards over a controller we have to use @useGuards() decorator. Inside the decorator we have to pass a reference to the guard class. 
+example - @UseGuards(new BookGuard())
+
+syntax - 
+@Controller("book")
+export class BookController {
+   
+
+    @Get("findAll")
+    @UseGuards(new BookGuard())
+    findAllBooks(): string {
+        return " This api returns all books"
+    }
+
+    
+}
+
+executing guard for the entire controller - 
+-> To do so we have to mention the @UseGuards(new BookGuard()) decorator before the class name 
+syntax - 
+@Controller("book")
+@UseGuards(new BookGuard())
+export class BookController { }
+
+Note - Guards can also be set up globally for all controllers and routes, using app.useGlobalGuards() 
+
+12. Interceptors in nestjs 
+
+Layman - Interceptor is a class which is used to modify the req and res object. In place of interceptor we can also use middleware, but the difference is that with the help of middleware we can modify only the request object, but not response object because response does not pass through the middleware.
+
+Definition - An interceptor is a class annotated with the @Injectable() decorator, which implements the NestInterceptor interface.
+
+syntax - 
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
+import { Observable } from "rxjs";
+
+@Injectable()
+export class AppInterceptor implements NestInterceptor {
+    intercept(context: ExecutionContext, next: CallHandler<any>): Observable<any> {
+        console.log("This is the interceptor");
+const ctx = context.switchToHttp()
+            const request = ctx.getRequest<Request>(); 
+
+            request.body.name = "This is the name" // with the help of injectable we are attaching a property name
+            request.body.age = 22 // with the help of injectable we are attaching the property age
+        return next.handle();
+    }
+}
+
+
+Note - Using req and res decorator in nestjs controller 
+syntax - helloWord(@Req() req : Request, @Res() res : Response) {
+        return "This is the post api"
+    }
+
+Using interceptor in controller - 
+
+export class AppController {
+	@Post("path")
+    	@UseInterceptors(AppInterceptor)
+	helloWord() : any {
+        
+        	return {"message": "This is the response"}
+    	}
+}
+
+
+13 Nestjs Authentication and Authorization
+
+
+How to perform authentication in nodejs
+1. Passport nodejs
+2. Local strategy
+
+Note - Passport is the most popular nodejs authentication library, and it is implemented in nestjs using @nestjs/passport module. 
+
+Authentication requirements 
+1. npm install --save @nestjs/passport passport passport-local
+2. npm install --save-dev @types/passport-local
+
+Implementing passport strategies 
+1. To use passport strategy, we have to extend PassportStrategy and inside it define the strategy
+2. Inside the class we have to create the constructor and a validate method to custom implement the strategy
+syntax (local strategy) - 
+
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { PassportStrategy } from "@nestjs/passport";
+import { Strategy } from "passport-local";
+import { UserService } from "src/users/user.service";
+
+@Injectable()
+export class PassportLocalStrategy extends PassportStrategy(Strategy) {
+    constructor(private readonly useService : UserService) {
+        super()
+    }
+
+    validate(username : string, password : string): any {
+        const user = this.useService.getUserByName(username);
+        if(user == undefined) throw new UnauthorizedException()
+        if(user.password == password)
+            return user;
+    }
+}
+
+3. Now after implementing the strategy we have to create a guard. Nestjs has also provided us with the in built guards using passport which can be implemented like following. We can do so by using the @UseGuards() annotation and inside it using @AuthGuard('strategy-name') decorator.
+
+syntax - 
+import { Controller, Get, UseGuards } from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
+
+@Controller("app")
+export class AppController {
+    @Get("path") 
+    @UseGuards(AuthGuard('local'))
+    getHello() : string {
+        return "This is private data"
+    }
+}
+
+Practice 1 - 
+a. Create a project in nestjs implementing pipes, guards, middlewares, express request and response and interconnected modules, handle data in body
+
+b. Handle get and put request and then route param and query string -> 	done 
+implementing pipes 
+
+
+ 
+
+
+
