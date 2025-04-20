@@ -433,5 +433,21 @@ export class RoleGuard implements CanActivate {
     }
 
 
-15. Nestjs configuration/environment variable 
+15. Nestjs configuration/environment variable
+1. To begin , we first install the required dependency 
+- npm i @nestjs/config 
+
+2. To use the configuration we have to set configuration in the root module
+- syntax
+import { ConfigModule } from '@nestjs/config';
+@Module({
+  imports: [ConfigModule.forRoot({
+    isGlobal : true // it means the configuration being set can be used throughout the module
+  })],
+  controllers: [],
+  providers: [],
+  exports: []
+})
+
+16. Nestjs MVC (Model View Controller)
 

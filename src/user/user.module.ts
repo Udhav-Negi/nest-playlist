@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
+
 
 @Module({
   imports: [],
   controllers: [],
-  providers: [UserService],
-  exports: [UserService]
+  exports: []
 })
 
 export class UserModule {
-  
+  constructor(private readonly configService : ConfigService) {
+    console.log("This is from user module ", process.env.PORT)
+    console.log("This is from user module", configService.get<boolean>("LOGGING"))
+  }
 }
