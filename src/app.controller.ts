@@ -1,5 +1,6 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { UsersGuard } from "./users/guards/users.guards";
 
 @Controller("app")
 export class AppController {
@@ -7,6 +8,12 @@ export class AppController {
     @UseGuards(AuthGuard('local'))
     getHello() : string {
         return "This is private data"
+    }
+
+    @Post()
+    @UseGuards(UsersGuard)
+    checkPostRequest() {
+        return "response from check post request"
     }
 }
 
