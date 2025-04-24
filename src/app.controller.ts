@@ -1,12 +1,12 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
+import { Controller, Get, Post, UseGuards, Request} from "@nestjs/common";
 
 @Controller("app")
 export class AppController {
-    @Get() 
-    @UseGuards(AuthGuard('local'))
+
+    @Get()
     getHello() : string {
-        return "This is private data"
+        return "Hello world"
     }
+    
 }
 

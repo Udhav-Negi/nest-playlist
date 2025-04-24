@@ -313,13 +313,141 @@ export class AppController {
 }
 
 Practice 1 - 
-a. Create a project in nestjs implementing pipes, guards, middlewares, express request and response and interconnected modules, handle data in body
+a. Create a project in nestjs implementing pipes, guards, middlewares, express request and response and interconnected modules, handle data in body -> done 
 
 b. Handle get and put request and then route param and query string -> 	done 
 implementing pipes 
 
+c. Implement and understand thoroughly passport strategy 
 
- 
+14. Authentication and authorization using jwt in nestjs
+
+authorization using jwt - 
+1. We need to install couple more package to support jwt requirements 
+- npm install @nestjs/jwt passport-jwt
+- npm install --save-dev @types/passport-jwt
+
+There are two scenarios in authorization
+1. Issue the jwt 
+- To implement this we have to import the JwtModule
+syntax - 
+imports: [JwtModule.register({
+    secret : "key",
+    signOptions : {
+      expiresIn : "60s",
+      
+    }
+  }
+)]
+
+providers: [AuthService],
+exports: [AuthService]
+
+-> The above code returns us a service which will be used to generate token 
+ 2. Now we will create our auth service
+syntax - 
+import { JwtService } from "@nestjs/jwt";
+@Injectable()
+export class AuthService {
+    constructor(private readonly jwtService : JwtService) {
+
+    }
+
+    
+    generateToken(payload : User) : string {
+        return this.jwtService.sign(payload); // this function will return the generated string
+    }
+}
+
+3. Using the authentication in controller
+@Post("login")
+    @UseGuards(AuthGuard('local'))
+    login(@Request() req) : string {
+        // authentication completed 
+        // nest step authorize
+        
+        const token = this.authService.generateToken(req.user) // authService is an instance of service 
+        // return req.user
+        return token
+    }
+
+4 For authorization we use strategy from passport-jwt
+syntax - 
+import { Injectable} from "@nestjs/common";
+import { PassportStrategy } from "@nestjs/passport";
+import { ExtractJwt, Strategy } from "passport-jwt";
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy){
+    constructor() {
+        super({
+            jwtFromRequest : ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ignoreExpiration : false,
+            secretOrKey : "key"
+        })
+    }
+
+    validate(payload : any) : any {
+        return payload;
+    }
+}
+
+- Using this service in controller 
+@Get("android-dev")
+    @UseGuards(AuthGuard('jwt'))
+    androidDeveloperData() : string {
+        return "This is private data for android developer"
+    }
 
 
+- Role Based authorization
+-> What we will do is that first we will check that whether the request has valid token or not. If yes, then we will check for its role in the next guard
+
+- syntax
+
+import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+import { Observable } from "rxjs";
+
+@Injectable()
+export class RoleGuard implements CanActivate {
+    private rolePassed: string;
+
+    constructor(role : string) {
+        this.rolePassed = role;
+    }
+
+    canActivate(context: ExecutionContext): boolean {
+        const ctx = context.switchToHttp();
+        const request : any = ctx.getRequest<Request>()
+
+        return this.rolePassed == request.user.role
+        
+    }
+}
+
+- using the above strategy in controller 
+@Get("web-dev")
+    @UseGuards(AuthGuard('jwt'), new RoleGuard(CONSTANTS.ROLES.WEB_DEVELOPER))
+    webDeveloperData() : string {
+        return "This is private data for web developer"
+    }
+
+
+15. Nestjs configuration/environment variable
+1. To begin , we first install the required dependency 
+- npm i @nestjs/config 
+
+2. To use the configuration we have to set configuration in the root module
+- syntax
+import { ConfigModule } from '@nestjs/config';
+@Module({
+  imports: [ConfigModule.forRoot({
+    isGlobal : true // it means the configuration being set can be used throughout the module
+  })],
+  controllers: [],
+  providers: [],
+  exports: []
+})
+
+16. Nestjs MVC (Model View Controller)
 
