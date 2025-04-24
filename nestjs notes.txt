@@ -219,7 +219,7 @@ export class BookController { }
 
 Note - Guards can also be set up globally for all controllers and routes, using app.useGlobalGuards() 
 
-12. Interceptors in nestjs 
+--------------------------------------------  12. Interceptors in nestjs ---------------------------------------------- 
 
 Layman - Interceptor is a class which is used to modify the req and res object. In place of interceptor we can also use middleware, but the difference is that with the help of middleware we can modify only the request object, but not response object because response does not pass through the middleware.
 
